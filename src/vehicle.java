@@ -1,6 +1,11 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.List;
 
 public class vehicle {
+
     public static double calculatedGasCost(double number_Of_Axel, double base_rate) {
         return base_rate + ((number_Of_Axel - 3) * 5) + (number_Of_Axel - (number_Of_Axel - 2));
     }
@@ -10,7 +15,7 @@ public class vehicle {
                 ((EVcost) * EV_discount);
     }
     public static double calculatedHybridCost(double number_Of_Axel,double hybrid_discount,double base_rate) {
-        
+
         double hybridCost = base_rate + ((number_Of_Axel - 3) * 5) + ((number_Of_Axel * 1) - (number_Of_Axel - 2));
         return hybridCost -
                 (hybridCost * hybrid_discount);
