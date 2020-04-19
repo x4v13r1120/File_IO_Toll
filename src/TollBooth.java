@@ -1,5 +1,3 @@
-import java.util.List;
-
 public class TollBooth {
 
     public static double totalCashMade = 0;
@@ -19,8 +17,8 @@ public class TollBooth {
     public static double totalCashCost(double carCost) {
         return carCost;
     }
-    public static double Price_Before_payment_Types(int number_Of_Axel, int car_Type,double hybrid_discount,double EV_discount,double base_rate) {
-        switch (car_Type) {
+    public static double Price_Before_payment_Types(double number_Of_Axel, double car_Type,double hybrid_discount,double EV_discount,double base_rate) {
+        switch ((int) car_Type) {
             case 1:
                 return vehicle.calculatedGasCost(number_Of_Axel,base_rate);
             case 2:
@@ -30,8 +28,8 @@ public class TollBooth {
         }
         return 0;
     }
-    public static double Price_to_be_Paid(int payment_Type, int number_of_Axels, int car_Type, double hybrid_discount,double EV_discount,double base_rate){
-        switch (payment_Type) {
+    public static double Price_to_be_Paid(double payment_Type, double number_of_Axels, double car_Type, double hybrid_discount,double EV_discount,double base_rate){
+        switch ((int) payment_Type) {
             case 1:
                 totalCashMade =+ TollBooth.totalCashCost(Price_Before_payment_Types(number_of_Axels , car_Type, hybrid_discount, EV_discount, base_rate));
                 return TollBooth.totalCashCost(Price_Before_payment_Types(number_of_Axels , car_Type, hybrid_discount, EV_discount, base_rate));

@@ -1,160 +1,213 @@
+import javax.imageio.IIOException;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Scanner;
+import java.text.DecimalFormat;
+import java.util.*;
 
 public class Main {
 
-    public static void main(String[] args) {
+    @SuppressWarnings("rawtypes")
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
 
-       Random rand = new Random();
+        final DecimalFormat df2 = new DecimalFormat("#.##");
+
         Scanner keyboard = new Scanner(System.in);
 
-        if (args[0].equals("config")) {
+        switch (args[0]) {
+            case "config":
+                try {
 
-
-            starting_config_Questions_();
-            try {
-                while (true) {
                     ObjectOutputStream oStreamConfig = new ObjectOutputStream(new FileOutputStream(new File("Config.txt")));
 
-                    int number_Of_Booths = keyboard.nextInt();
+                    List<String> car_Types = new ArrayList<>(List.of("1.Gas", "2.hybrid", "3.EV"));
+                    System.out.println("The acceptable car types are" + car_Types);
+
+                    System.out.println("Please write your number of booths.");
+                    double number_Of_Booths = keyboard.nextDouble();
+
+                    List<String> payment_methods = new ArrayList<>(Arrays.asList("1.cash", "2.card", "3.ES"));
+                    System.out.println("The acceptable payment methods are" + payment_methods);
+
+                    System.out.println("Please write your base rate.");
                     double base_rate = keyboard.nextDouble();
+
+                    System.out.println("Please write your discount for electric cars.");
                     double EV_discount = keyboard.nextDouble();
+
+                    System.out.println("Please write your discount for hybrid cars.");
                     double hybrid_Discount = keyboard.nextDouble();
 
-                    List car_Types = new ArrayList(3);
-                    car_Types.add("1." + keyboard.next());
-                    car_Types.add("2." + keyboard.next());
-                    car_Types.add("3." + keyboard.next());
+                    System.out.println("You have successful configured the toll station.");
 
-                    List payment_methods = new ArrayList(3);
-                    payment_methods.add("1." + keyboard.next());
-                    payment_methods.add("2." + keyboard.next());
-                    payment_methods.add("3." + keyboard.next());
-
-                    oStreamConfig.writeInt(number_Of_Booths);
+                    oStreamConfig.writeObject(car_Types);
+                    oStreamConfig.writeDouble(number_Of_Booths);
+                    oStreamConfig.writeObject(payment_methods);
                     oStreamConfig.writeDouble(base_rate);
                     oStreamConfig.writeDouble(EV_discount);
                     oStreamConfig.writeDouble(hybrid_Discount);
 
-                    oStreamConfig.writeObject(car_Types);
-                    oStreamConfig.writeObject(payment_methods);
-
                     oStreamConfig.close();
+
+                } catch (EOFException e) {
+                    System.out.println("You have successful configured the toll station." + e.getLocalizedMessage());
+                } catch (IOException e) {
+                    System.out.println(e.getLocalizedMessage());
                 }
-
-            } catch (EOFException e) {
-                System.out.println("You have successful configured the toll station." + e.getLocalizedMessage());
-            } catch (IOException e) {
-                System.out.println(e.getLocalizedMessage());
-            }
-
-        } else if (args[0].equals("report")) {
-            try {
-                ObjectInputStream iStreamConfig = new ObjectInputStream(new FileInputStream(new File("config.txt")));
-                // where the configuration will be read from
-
-                int number_Of_Booth = iStreamConfig.readInt();
-                double base_rate = iStreamConfig.readDouble();
-                double EV_discount = iStreamConfig.readDouble();
-                double hybrid_discount = iStreamConfig.readDouble();
-
-                List car_types = (List) iStreamConfig.readObject();
-                List payment_types = (List) iStreamConfig.readObject();
-
-                iStreamConfig.close();
-
+                break;
+            case "report":
                 try {
-                    ObjectInputStream iStreamVehicle = new ObjectInputStream(new FileInputStream(new File("vehicle.txt")));
+                    ObjectInputStream iStreamConfig = new ObjectInputStream(new FileInputStream(new File("config.txt")));
+                    // where the configuration will be read from
+                    Object car_types = iStreamConfig.readObject();
+                    double number_Of_Booth = iStreamConfig.readDouble();
+                    Object payment_types = iStreamConfig.readObject();
+                    double base_rate = iStreamConfig.readDouble();
+                    double EV_discount = iStreamConfig.readDouble();
+                    double hybrid_discount = iStreamConfig.readDouble();
 
-
-                    int payment_Type = iStreamVehicle.readInt();
-                    int car_Type = iStreamVehicle.readInt();
-                    int number_Of_Axel = iStreamVehicle.readInt();
-
-                    double price_Car_pay = iStreamVehicle.readDouble();
-                    double money_Made_at_Booth= iStreamVehicle.readDouble();
-                    double totalStationMade =  iStreamVehicle.readDouble();
-
-                    iStreamVehicle.close();
-
+                    iStreamConfig.close();
                     try {
+                        ObjectInputStream iStreamVehicle = new ObjectInputStream(new FileInputStream(new File("vehicle.txt")));
 
-                        ObjectInputStream iStreamReport = new ObjectInputStream(new FileInputStream(new File("Report.txt")));
-                        // where the final report will be read from
+                        //noinspection unused
+                        double payment_Type = iStreamVehicle.readDouble();
+                        //noinspection unused
+                        double car_Type = iStreamVehicle.readDouble();
+                        //noinspection unused
+                        double number_Of_Axel = iStreamVehicle.readDouble();
 
+                        double money_Made_at_Booth = iStreamVehicle.readDouble();
+                        double totalCardMade = iStreamVehicle.readDouble();
+                        double totalCashMade = iStreamVehicle.readDouble();
+                        double totalEsMade = iStreamVehicle.readDouble();
+                        double totalStationMade = iStreamVehicle.readDouble();
+                        double price_Car_pay = iStreamVehicle.readDouble();
+
+                        iStreamVehicle.close();
+                        try {
+                            ObjectInputStream iStreamPaid = new ObjectInputStream(new FileInputStream(new File("paid.txt")));
+
+                            Object prices_paid = iStreamPaid.readObject();
+                            iStreamPaid.close();
+                            try {
+
+                                ObjectOutputStream oStreamReport = new ObjectOutputStream(new FileOutputStream(new File("Report.txt")));
+                                // where the final report will be written in
+                                oStreamReport.writeObject(car_types);
+                                oStreamReport.writeDouble(number_Of_Booth);
+                                oStreamReport.writeObject(payment_types);
+                                oStreamReport.writeDouble(base_rate);
+                                oStreamReport.writeDouble(EV_discount);
+                                oStreamReport.writeDouble(hybrid_discount);
+
+                                oStreamReport.writeDouble(money_Made_at_Booth);
+                                oStreamReport.writeDouble(totalCardMade);
+                                oStreamReport.writeDouble(totalCashMade);
+                                oStreamReport.writeDouble(totalEsMade);
+                                oStreamReport.writeDouble(totalStationMade);
+                                oStreamReport.writeDouble(price_Car_pay);
+
+                                oStreamReport.writeObject(prices_paid);
+
+                                oStreamReport.close();
+
+                            } catch (IOException e) {
+                                System.out.println(e.getLocalizedMessage());
+                            }
+                            try {
+                                ObjectInputStream iStreamReport = new ObjectInputStream(new FileInputStream(new File("Report.txt")));
+
+                                iStreamReport.readObject();
+                                iStreamReport.readDouble();
+                                iStreamReport.readObject();
+                                iStreamReport.readDouble();
+                                iStreamReport.readDouble();
+                                iStreamReport.readDouble();
+
+
+                                System.out.println("The total money made from booth's is $" + df2.format(iStreamReport.readDouble()));
+                                System.out.println("The total money made from card transactions is $" + df2.format(iStreamReport.readDouble()));
+                                System.out.println("The total money made from cash transactions is $" + df2.format(iStreamReport.readDouble()));
+                                System.out.println("The total money made from Es transactions is $" + df2.format(iStreamReport.readDouble()));
+                                System.out.println("The total money made from this station is $" + df2.format(iStreamReport.readDouble()));
+                                System.out.println("The money paid by each car is" + iStreamReport.readObject());
+
+
+                                iStreamReport.close();
+                            } catch (IOException e) {
+                                System.out.println(e.getLocalizedMessage());
+                            }
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
                     } catch (IOException e) {
                         System.out.println(e.getLocalizedMessage());
                     }
                 } catch (IOException e) {
                     System.out.println(e.getLocalizedMessage());
                 }
+                break;
+            case "user":
+                try {
+                    ObjectInputStream iStreamConfig = new ObjectInputStream(new FileInputStream(new File("config.txt")));
+                    // where the configuration will be read from
+                    Object car_types = (iStreamConfig.readObject());
+                    double number_Of_Booth = iStreamConfig.readDouble();
+                    Object payment_types = iStreamConfig.readObject();
+                    double base_rate = iStreamConfig.readDouble();
+                    double EV_discount = iStreamConfig.readDouble();
+                    double hybrid_discount = iStreamConfig.readDouble();
+                    iStreamConfig.close();
+                    try {
+                        ObjectOutputStream oStreamVehicle = new ObjectOutputStream(new FileOutputStream(new File("Vehicle.txt")));
+                        double totalStationMade = 0;
+                        for (int i = (int) number_Of_Booth; i > 0; i--) {
+                            double money_Made_at_Booth = TollBooth.Booth_Money_Total();
+                            totalStationMade = +money_Made_at_Booth;
+                            for (double number_Of_Cars_At_Booth = 3; number_Of_Cars_At_Booth > 0; number_Of_Cars_At_Booth--) {
 
-            } catch (IOException | ClassNotFoundException e) {
-                System.out.println(e.getLocalizedMessage());
-            }
+                                vehicle.Sample_Questions_for_vehicle_Numbers(car_types, payment_types);
+                                double payment_Type = keyboard.nextDouble();
+                                double car_Type = keyboard.nextDouble();
+                                double number_Of_Axel = keyboard.nextDouble();
 
-        } else if ((args[0].equals("config") && args[1].equals("report")) || (args[0].equals("report") && args[1].equals("config"))) {
+                                double price_Car_pay = TollBooth.Price_to_be_Paid(payment_Type, car_Type, number_Of_Axel, EV_discount, hybrid_discount, base_rate);
 
-        } else if (args[0].equals("user")) {
-            try {
-                ObjectInputStream iStreamConfig = new ObjectInputStream(new FileInputStream(new File("config.txt")));
-                // where the configuration will be read from
+                                oStreamVehicle.writeDouble(payment_Type);
+                                oStreamVehicle.writeDouble(car_Type);
+                                oStreamVehicle.writeDouble(number_Of_Axel);
+                                oStreamVehicle.writeObject(price_Car_pay);
+                                try {
+                                    ObjectOutputStream oStreamPaid = new ObjectOutputStream(new FileOutputStream(new File("paid.txt")));
+                                    List<Double> price_Paid_by_user = new ArrayList<>();
+                                    for (int x = (int) number_Of_Booth; x > 0; x--) {
+                                        price_Paid_by_user.add(price_Car_pay);
+                                    }
+                                    oStreamPaid.writeObject(price_Paid_by_user);
+                                } catch (IOException e) {
+                                    System.out.println(e.getLocalizedMessage());
+                                }
+                            }
+                            oStreamVehicle.writeDouble(money_Made_at_Booth);
+                        }
+                        oStreamVehicle.writeDouble(TollBooth.totalCardMade);
+                        oStreamVehicle.writeDouble(TollBooth.totalCashMade);
+                        oStreamVehicle.writeDouble(TollBooth.totalEsMade);
+                        oStreamVehicle.writeDouble(totalStationMade);
 
-                int number_Of_Booth = iStreamConfig.readInt();
-                double base_rate = iStreamConfig.readDouble();
-                double EV_discount = iStreamConfig.readDouble();
-                double hybrid_discount = iStreamConfig.readDouble();
-
-                List car_types = (List) iStreamConfig.readObject();
-                List payment_types = (List) iStreamConfig.readObject();
-
-                iStreamConfig.close();
-
-                ObjectOutputStream oStreamVehicle = new ObjectOutputStream(new FileOutputStream(new File("Vehicle.txt")));
-                double totalStationMade = 0;
-                for (int i = 0; i<number_Of_Booth; i--) {
-                    double money_Made_at_Booth = TollBooth.Booth_Money_Total();
-                    totalStationMade =+ money_Made_at_Booth;
-                    for (int numberOfCarsAtStation = rand.nextInt(5); numberOfCarsAtStation > 0; numberOfCarsAtStation--) {
-
-                        vehicle.Sample_numbers_for_vehicle_Questions(car_types, payment_types);
-
-                        int payment_Type = keyboard.nextInt();
-                        int car_Type = keyboard.nextInt();
-                        int number_Of_Axel = keyboard.nextInt();
-
-                        double price_Car_pay = TollBooth.Price_to_be_Paid(payment_Type, car_Type, number_Of_Axel, EV_discount, hybrid_discount, base_rate);
-
-                        oStreamVehicle.writeInt(payment_Type);
-                        oStreamVehicle.writeInt(car_Type);
-                        oStreamVehicle.writeInt(number_Of_Axel);
-
-                        oStreamVehicle.writeDouble(price_Car_pay);
+                        oStreamVehicle.close();
+                    } catch (IOException e) {
+                        System.out.println(e.getLocalizedMessage());
                     }
-                    oStreamVehicle.writeDouble(money_Made_at_Booth);
-                }
-                oStreamVehicle.writeDouble(totalStationMade);
 
-                oStreamVehicle.close();
-            } catch (IOException | ClassNotFoundException e) {
-                System.out.println(e.getLocalizedMessage());
-            }
-        } else {
-            System.out.println("Something went wrong please try again.");
+                } catch (IOException e) {
+                    System.out.println(e.getLocalizedMessage());
+                }
+                break;
         }
     }
-
-    public static void starting_config_Questions_() {
-        System.out.println("Please write your number of booths.\n");
-        System.out.println("Please write your base rate.\n");
-        System.out.println("Please write your discount for electric cars.\n");
-        System.out.println("Please write your discount for hybrid cars.\n");
-        System.out.println("Please write your acceptable car types");
-        System.out.println("Please write your acceptable payment methods");
-
-    }
-
 }
+
